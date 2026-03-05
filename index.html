@@ -157,6 +157,15 @@
             display: block;
         }
 
+        #pip-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            transform: scaleX(-1);
+        }
+
         #pip-label {
             position: absolute;
             top: 5px;
@@ -352,6 +361,7 @@
     <!-- PiP -->
     <div id="pip">
         <video id="pip-video" autoplay playsinline muted></video>
+        <canvas id="pip-canvas"></canvas>
         <span id="pip-label">📷 live</span>
     </div>
 
@@ -510,20 +520,25 @@
             // Draw all strokes
             renderStrokes(ctx, c.width, c.height);
 
+            // Size pip canvas correctly to video container
+            var pipRect = pipEl.getBoundingClientRect();
+            pipCanvas.width = pipRect.width;
+            pipCanvas.height = pipRect.height;
+            pipCtx.clearRect(0, 0, pipCanvas.width, pipCanvas.height);
+
             if (!res.multiHandLandmarks || res.multiHandLandmarks.length === 0) {
                 // No hand — finish stroke
                 if (drawing && cur) strokes.push(cur);
                 cur = null; drawing = false;
                 sx = null; sy = null;
-                hintEl.textContent = '☝️ Index finger = Draw · ✋ Open palm = Erase · ✊ Fist = Lift pen';
                 return;
             }
 
             var lm = res.multiHandLandmarks[0];
 
-            // Draw hand skeleton (same as original code, but fainter)
-            drawConnectors(ctx, lm, HAND_CONNECTIONS, { color: 'rgba(255,255,255,0.15)', lineWidth: 1 });
-            drawLandmarks(ctx, lm, { color: 'rgba(255,255,255,0.5)', lineWidth: 1, radius: 2 });
+            // Draw hand skeleton onto the PiP video canvas
+            drawConnectors(pipCtx, lm, HAND_CONNECTIONS, { color: 'rgba(255,255,255,0.25)', lineWidth: 1 });
+            drawLandmarks(pipCtx, lm, { color: 'rgba(255,255,255,0.7)', lineWidth: 1, radius: 2 });
 
             // Index tip — use raw ind.x since canvas is mirrored in CSS
             var ind = lm[8];
