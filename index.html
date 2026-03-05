@@ -22,12 +22,6 @@
             padding: 0;
         }
 
-        :root {
-            --fg: #fff;
-            --muted: #666;
-            --border: #2a2a2a;
-        }
-
         html,
         body {
             height: 100%;
@@ -39,21 +33,20 @@
             user-select: none;
         }
 
-        /* Hidden video feed — MediaPipe reads it but we don't show it */
         #cam-video {
             display: none;
         }
 
-        /* Drawing canvas — fills full screen */
+        /* Full-screen drawing canvas */
         #c {
             position: fixed;
             inset: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             display: block;
         }
 
-        /* ── Floating toolbar (pill, top centre) ── */
+        /* ── Floating toolbar ── */
         #toolbar {
             position: fixed;
             top: 12px;
@@ -62,13 +55,13 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            background: rgba(0, 0, 0, 0.75);
-            border: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.78);
+            border: 1px solid #2a2a2a;
             border-radius: 40px;
             padding: 6px 14px;
             z-index: 50;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             white-space: nowrap;
         }
 
@@ -82,7 +75,7 @@
         .sep {
             width: 1px;
             height: 16px;
-            background: var(--border);
+            background: #2a2a2a;
         }
 
         .btn {
@@ -94,12 +87,12 @@
             padding: 5px 10px;
             cursor: pointer;
             border-radius: 20px;
-            transition: background 0.15s, border-color 0.15s;
+            transition: background .15s, border-color .15s;
         }
 
         .btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: var(--border);
+            background: rgba(255, 255, 255, .1);
+            border-color: #333;
         }
 
         .btn.active {
@@ -115,8 +108,8 @@
 
         .slider-label {
             font-size: 9px;
-            color: var(--muted);
-            letter-spacing: 0.1em;
+            color: #666;
+            letter-spacing: .1em;
         }
 
         input[type=range] {
@@ -124,7 +117,7 @@
             appearance: none;
             width: 58px;
             height: 3px;
-            background: var(--border);
+            background: #2a2a2a;
             outline: none;
             border-radius: 2px;
         }
@@ -138,17 +131,17 @@
             cursor: pointer;
         }
 
-        /* ── Floating PiP video (bottom-left) ── */
+        /* ── Floating PiP (bottom-left) ── */
         #pip {
             position: fixed;
             bottom: 20px;
             left: 20px;
-            width: 130px;
-            aspect-ratio: 9 / 16;
+            width: 120px;
+            aspect-ratio: 9/16;
             border-radius: 14px;
             overflow: hidden;
-            border: 1.5px solid rgba(255, 255, 255, 0.12);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            border: 1.5px solid rgba(255, 255, 255, .12);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, .6);
             z-index: 50;
             background: #111;
         }
@@ -161,55 +154,45 @@
             display: block;
         }
 
-        #pip-canvas {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            transform: scaleX(-1);
-        }
-
         #pip-label {
             position: absolute;
             top: 5px;
             left: 7px;
             font-size: 8px;
-            letter-spacing: 0.1em;
-            color: rgba(255, 255, 255, 0.45);
+            letter-spacing: .1em;
+            color: rgba(255, 255, 255, .4);
         }
 
-        /* ── Hint bar (bottom centre) ── */
+        /* ── Hint ── */
         #hint {
             position: fixed;
             bottom: 18px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.65);
-            border: 1px solid var(--border);
+            background: rgba(0, 0, 0, .65);
+            border: 1px solid #2a2a2a;
             border-radius: 6px;
             padding: 4px 14px;
             font-size: 9px;
-            letter-spacing: 0.1em;
-            color: var(--muted);
+            letter-spacing: .1em;
+            color: #666;
             pointer-events: none;
             z-index: 50;
             white-space: nowrap;
-            transition: opacity 0.3s;
         }
 
         /* ── Camera overlay ── */
         #cam-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.95);
+            background: rgba(0, 0, 0, .95);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 100;
             gap: 18px;
-            transition: opacity 0.4s;
+            transition: opacity .4s;
         }
 
         #cam-overlay.hidden {
@@ -224,17 +207,16 @@
         #cam-overlay h2 {
             font-size: 17px;
             font-weight: 500;
-            letter-spacing: 0.1em;
+            letter-spacing: .1em;
             color: #fff;
         }
 
         #cam-overlay p {
             font-size: 11px;
-            color: var(--muted);
+            color: #666;
             text-align: center;
             max-width: 280px;
             line-height: 1.8;
-            letter-spacing: 0.08em;
         }
 
         #btn-allow {
@@ -248,7 +230,7 @@
             font-weight: 600;
             padding: 14px 36px;
             cursor: pointer;
-            letter-spacing: 0.1em;
+            letter-spacing: .1em;
         }
 
         .spinner {
@@ -257,7 +239,7 @@
             border: 2px solid #222;
             border-top-color: #fff;
             border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            animation: spin .8s linear infinite;
         }
 
         @keyframes spin {
@@ -270,14 +252,14 @@
         #qr-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.88);
+            background: rgba(0, 0, 0, .88);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 200;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.2s;
+            transition: opacity .2s;
         }
 
         #qr-overlay.show {
@@ -287,7 +269,6 @@
 
         #qr-box {
             background: #fff;
-            color: #000;
             border-radius: 12px;
             padding: 24px 24px 18px;
             display: flex;
@@ -298,7 +279,7 @@
 
         #qr-box p {
             font-size: 10px;
-            letter-spacing: 0.12em;
+            letter-spacing: .12em;
             color: #555;
         }
 
@@ -337,7 +318,7 @@
             }
 
             #pip {
-                width: 100px;
+                width: 90px;
             }
         }
     </style>
@@ -345,22 +326,21 @@
 
 <body>
 
-    <!-- Hidden video for MediaPipe -->
     <video id="cam-video" autoplay playsinline muted></video>
-
-    <!-- Main drawing canvas (full screen) -->
     <canvas id="c"></canvas>
 
-    <!-- Hint -->
-    <div id="hint">☝️ One finger = Draw &nbsp;·&nbsp; 👌 Pinch = Move (lift pen)</div>
+    <div id="hint">☝️ One finger = Draw &nbsp;·&nbsp; 👌 Pinch = Lift pen (move)</div>
 
-    <!-- Floating toolbar -->
+    <!-- Toolbar -->
     <div id="toolbar">
         <h1>✦ HandBoard</h1>
         <div class="sep"></div>
+        <button class="btn active" id="btn-draw">✏ Draw</button>
+        <button class="btn" id="btn-erase">◻ Erase</button>
+        <div class="sep"></div>
         <div class="slider-wrap">
             <span class="slider-label">Size</span>
-            <input type="range" id="brush-size" min="1" max="30" value="5" />
+            <input type="range" id="brush-size" min="2" max="40" value="6" />
         </div>
         <div class="sep"></div>
         <button class="btn" id="btn-clear">⊘ Clear</button>
@@ -369,10 +349,9 @@
         <button class="btn" id="btn-qr">⊞ QR</button>
     </div>
 
-    <!-- Floating PiP video -->
+    <!-- PiP -->
     <div id="pip">
         <video id="pip-video" autoplay playsinline muted></video>
-        <canvas id="pip-canvas"></canvas>
         <span id="pip-label">📷 live</span>
     </div>
 
@@ -385,7 +364,7 @@
         <div class="spinner" id="boot-spinner" style="display:none"></div>
     </div>
 
-    <!-- QR Modal -->
+    <!-- QR -->
     <div id="qr-overlay">
         <div id="qr-box">
             <p>SCAN TO OPEN ON PHONE</p>
@@ -397,150 +376,141 @@
 
     <script>
         // ── Refs ──────────────────────────────────────────────────
-        const camVideo = document.getElementById('cam-video');
-        const pipVideo = document.getElementById('pip-video');
-        const pipCanvas = document.getElementById('pip-canvas');
-        const c = document.getElementById('c');
-        const ctx = c.getContext('2d');
-        const pipCtx = pipCanvas.getContext('2d');
-        const hintEl = document.getElementById('hint');
-        const brushSlider = document.getElementById('brush-size');
-        const btnClear = document.getElementById('btn-clear');
-        const btnSave = document.getElementById('btn-save');
-        const btnQR = document.getElementById('btn-qr');
-        const qrOverlay = document.getElementById('qr-overlay');
-        const qrCanvas = document.getElementById('qr-canvas');
-        const qrUrlEl = document.getElementById('qr-url');
-        const qrClose = document.getElementById('qr-close');
-        const camOverlay = document.getElementById('cam-overlay');
-        const btnAllow = document.getElementById('btn-allow');
-        const bootSpinner = document.getElementById('boot-spinner');
-        const pipEl = document.getElementById('pip');
+        var camVideo = document.getElementById('cam-video');
+        var pipVideo = document.getElementById('pip-video');
+        var c = document.getElementById('c');
+        var ctx = c.getContext('2d');
+        var hintEl = document.getElementById('hint');
+        var btnDraw = document.getElementById('btn-draw');
+        var btnErase = document.getElementById('btn-erase');
+        var btnClear = document.getElementById('btn-clear');
+        var btnSave = document.getElementById('btn-save');
+        var btnQR = document.getElementById('btn-qr');
+        var brushSlider = document.getElementById('brush-size');
+        var qrOverlay = document.getElementById('qr-overlay');
+        var qrCanvas = document.getElementById('qr-canvas');
+        var qrUrlEl = document.getElementById('qr-url');
+        var qrClose = document.getElementById('qr-close');
+        var camOverlay = document.getElementById('cam-overlay');
+        var btnAllow = document.getElementById('btn-allow');
+        var bootSpinner = document.getElementById('boot-spinner');
 
-        // ── Drawing state ─────────────────────────────────────────
-        // Strokes: array of arrays of {x,y} points (completed strokes)
+        // ── State ─────────────────────────────────────────────────
+        // strokes = [{pts:[{x,y}], erase:bool, width:num}]
         var strokes = [];
-        var curStroke = [];   // current live stroke
-        var isDrawing = false;
-
-        // Smoothed cursor coords (user's 0.45 factor — feels great)
-        var sx = null, sy = null;
-        var brushSize = 5;
-
-        // ── Resize canvas ─────────────────────────────────────────
-        function resize() {
-            // Preserve drawing by saving to temp
-            const tmp = document.createElement('canvas');
-            tmp.width = c.width; tmp.height = c.height;
-            tmp.getContext('2d').drawImage(c, 0, 0);
-            c.width = window.innerWidth;
-            c.height = window.innerHeight;
-            render(); // full redraw from stroke data
-
-            // Resize pip canvas
-            const pipRect = pipEl.getBoundingClientRect();
-            pipCanvas.width = pipRect.width;
-            pipCanvas.height = pipRect.height;
-        }
-        window.addEventListener('resize', resize);
-
-        // ── Render all strokes (called every frame) ────────────────
-        function render() {
-            // Black board
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, c.width, c.height);
-
-            ctx.lineWidth = brushSize;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.strokeStyle = '#fff';
-            ctx.shadowColor = 'rgba(255,255,255,0.4)';
-            ctx.shadowBlur = 6;
-
-            // Draw all completed strokes
-            for (var i = 0; i < strokes.length; i++) {
-                drawStrokeArr(strokes[i]);
-            }
-            // Draw active stroke
-            if (curStroke.length > 0) drawStrokeArr(curStroke);
-        }
-
-        function drawStrokeArr(pts) {
-            if (pts.length === 0) return;
-            ctx.beginPath();
-            ctx.moveTo(pts[0].x, pts[0].y);
-            if (pts.length === 1) {
-                // Single dot
-                ctx.arc(pts[0].x, pts[0].y, ctx.lineWidth / 2, 0, Math.PI * 2);
-                ctx.fillStyle = '#fff';
-                ctx.fill();
-                return;
-            }
-            for (var j = 1; j < pts.length; j++) {
-                ctx.lineTo(pts[j].x, pts[j].y);
-            }
-            ctx.stroke();
-        }
+        var cur = null;   // current stroke object
+        var drawing = false;
+        var mode = 'draw'; // 'draw' | 'erase'
+        var brushSize = 6;
+        var sx = null, sy = null;  // smoothed cursor
 
         // ── Toolbar ───────────────────────────────────────────────
-        brushSlider.addEventListener('input', () => brushSize = +brushSlider.value);
+        btnDraw.addEventListener('click', function () {
+            mode = 'draw';
+            btnDraw.classList.add('active'); btnErase.classList.remove('active');
+        });
+        btnErase.addEventListener('click', function () {
+            mode = 'erase';
+            btnErase.classList.add('active'); btnDraw.classList.remove('active');
+        });
+        brushSlider.addEventListener('input', function () { brushSize = +this.value; });
 
-        btnClear.addEventListener('click', () => {
-            strokes = []; curStroke = []; isDrawing = false;
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, c.width, c.height);
+        btnClear.addEventListener('click', function () {
+            strokes = []; cur = null; drawing = false;
         });
 
-        btnSave.addEventListener('click', () => {
-            const a = document.createElement('a');
-            a.download = `handboard_${Date.now()}.png`;
-            a.href = c.toDataURL('image/png');
+        btnSave.addEventListener('click', function () {
+            // Render to a clean canvas without camera and save
+            var tmp = document.createElement('canvas');
+            tmp.width = window.innerWidth; tmp.height = window.innerHeight;
+            var tc = tmp.getContext('2d');
+            tc.fillStyle = '#000';
+            tc.fillRect(0, 0, tmp.width, tmp.height);
+            renderStrokes(tc, tmp.width, tmp.height);
+            var a = document.createElement('a');
+            a.download = 'handboard_' + Date.now() + '.png';
+            a.href = tmp.toDataURL('image/png');
             a.click();
         });
 
-        // QR
-        let qrGen = false;
-        btnQR.addEventListener('click', () => {
-            const url = window.location.href;
+        var qrGen = false;
+        btnQR.addEventListener('click', function () {
+            var url = window.location.href;
             qrUrlEl.textContent = url;
             if (!qrGen && typeof QRCode !== 'undefined') {
                 QRCode.toCanvas(qrCanvas, url, {
                     width: 200, margin: 1,
                     color: { dark: '#000', light: '#fff' }
-                }, () => { });
+                }, function () { });
                 qrGen = true;
             }
             qrOverlay.classList.add('show');
         });
-        qrClose.addEventListener('click', () => qrOverlay.classList.remove('show'));
-        qrOverlay.addEventListener('click', e => { if (e.target === qrOverlay) qrOverlay.classList.remove('show'); });
+        qrClose.addEventListener('click', function () { qrOverlay.classList.remove('show'); });
+        qrOverlay.addEventListener('click', function (e) {
+            if (e.target === qrOverlay) qrOverlay.classList.remove('show');
+        });
 
-        // ── Gesture helpers ───────────────────────────────────────
-        // 👌 pinch: thumb tip (4) close to index tip (8)
+        // ── Render all strokes onto a context ────────────────────
+        function renderStrokes(tctx, w, h) {
+            for (var i = 0; i < strokes.length; i++) {
+                var s = strokes[i];
+                if (s.pts.length === 0) continue;
+
+                tctx.save();
+                if (s.erase) {
+                    // Erase = draw a thick black stroke over everything
+                    tctx.globalCompositeOperation = 'destination-out';
+                    tctx.strokeStyle = 'rgba(0,0,0,1)';
+                    tctx.lineWidth = s.width * 4;
+                    tctx.shadowBlur = 0;
+                } else {
+                    tctx.globalCompositeOperation = 'source-over';
+                    tctx.shadowColor = 'rgba(255,255,255,0.35)';
+                    tctx.shadowBlur = 8;
+                    tctx.strokeStyle = '#fff';
+                    tctx.lineWidth = s.width;
+                }
+                tctx.lineCap = 'round';
+                tctx.lineJoin = 'round';
+
+                tctx.beginPath();
+                tctx.moveTo(s.pts[0].x, s.pts[0].y);
+                if (s.pts.length === 1) {
+                    tctx.arc(s.pts[0].x, s.pts[0].y, tctx.lineWidth / 2, 0, Math.PI * 2);
+                    tctx.fillStyle = s.erase ? 'rgba(0,0,0,1)' : '#fff';
+                    tctx.fill();
+                } else {
+                    for (var j = 1; j < s.pts.length; j++) tctx.lineTo(s.pts[j].x, s.pts[j].y);
+                    tctx.stroke();
+                }
+                tctx.restore();
+            }
+        }
+
+        // ── Pinch detection ───────────────────────────────────────
         function isPinch(lm) {
             var dx = lm[4].x - lm[8].x;
             var dy = lm[4].y - lm[8].y;
             return Math.sqrt(dx * dx + dy * dy) < 0.07;
         }
 
-        // ── MediaPipe result handler ──────────────────────────────
-        function onResults(res) {
-            // Resize canvas each frame (handles orientation changes)
+        // ── MediaPipe result handler (from user's original code) ──
+        function run(res) {
             c.width = window.innerWidth;
             c.height = window.innerHeight;
 
-            render();
+            // Black board
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, c.width, c.height);
 
-            // Draw pip skeleton
-            const pipRect = pipEl.getBoundingClientRect();
-            pipCanvas.width = pipRect.width;
-            pipCanvas.height = pipRect.height;
-            pipCtx.clearRect(0, 0, pipCanvas.width, pipCanvas.height);
+            // Draw all strokes
+            renderStrokes(ctx, c.width, c.height);
 
             if (!res.multiHandLandmarks || res.multiHandLandmarks.length === 0) {
-                // No hand — end stroke
-                if (isDrawing && curStroke.length > 1) strokes.push(curStroke);
-                curStroke = []; isDrawing = false;
+                // No hand — finish stroke
+                if (drawing && cur) strokes.push(cur);
+                cur = null; drawing = false;
                 sx = null; sy = null;
                 hintEl.textContent = '☝️ One finger = Draw · 👌 Pinch = Move (lift pen)';
                 return;
@@ -548,84 +518,78 @@
 
             var lm = res.multiHandLandmarks[0];
 
-            // Draw skeleton on pip
-            drawConnectors(pipCtx, lm, HAND_CONNECTIONS, { color: 'rgba(255,255,255,0.35)', lineWidth: 1 });
-            drawLandmarks(pipCtx, lm, { color: '#fff', lineWidth: 1, radius: 2 });
+            // Draw hand skeleton (same as original code, but fainter)
+            drawConnectors(ctx, lm, HAND_CONNECTIONS, { color: 'rgba(255,255,255,0.15)', lineWidth: 1 });
+            drawLandmarks(ctx, lm, { color: 'rgba(255,255,255,0.5)', lineWidth: 1, radius: 2 });
 
-            // Finger tip (index = lm[8]) — video is NOT mirrored for MediaPipe coords,
-            // but canvas is mirrored via CSS, so we flip x for drawing
+            // Index tip — flip X because canvas is NOT CSS-mirrored here
             var ind = lm[8];
-            var rx = (1 - ind.x) * c.width;   // flip X to match mirrored display
+            var rx = (1 - ind.x) * c.width;
             var ry = ind.y * c.height;
 
-            // 0.45 smoothing (user's preferred factor)
+            // 0.45 smoothing (user's original factor)
             if (sx === null) { sx = rx; sy = ry; }
             else { sx += (rx - sx) * 0.45; sy += (ry - sy) * 0.45; }
 
-            // Draw cursor dot
-            ctx.save();
-            ctx.shadowBlur = 0;
+            // Cursor dot
             ctx.beginPath();
             ctx.arc(sx, sy, 7, 0, Math.PI * 2);
-            ctx.fillStyle = isPinch(lm) ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.6)';
+            ctx.fillStyle = isPinch(lm) ? 'rgba(255,255,255,0.15)' : (mode === 'erase' ? 'rgba(150,150,150,0.6)' : 'rgba(255,255,255,0.7)');
+            ctx.shadowBlur = 0;
             ctx.fill();
-            ctx.restore();
 
-            // ── Gesture: pinch = MOVE (lift pen), no pinch = DRAW
+            // ── Gesture: 👌 pinch = lift pen, else = draw/erase
             if (isPinch(lm)) {
-                // 👌 Pinch — lift pen, reposition without drawing
-                if (isDrawing && curStroke.length > 1) strokes.push(curStroke);
-                curStroke = []; isDrawing = false;
-                hintEl.textContent = '👌 Moving — pen lifted';
+                if (drawing && cur) { strokes.push(cur); cur = null; }
+                drawing = false;
+                hintEl.textContent = '👌 Pen lifted — moving';
             } else {
-                // ☝️ Regular pointing — DRAW
-                if (!isDrawing) {
-                    isDrawing = true;
-                    curStroke = [];
+                // Draw or erase
+                if (!drawing) {
+                    drawing = true;
+                    cur = { pts: [], erase: (mode === 'erase'), width: brushSize };
                 }
-                curStroke.push({ x: sx, y: sy });
-                hintEl.textContent = '☝️ Drawing…';
+                // Keep mode consistent within single stroke
+                cur.pts.push({ x: sx, y: sy });
+                hintEl.textContent = mode === 'erase' ? '◻ Erasing…' : '☝️ Drawing…';
             }
         }
 
-        // ── Boot ──────────────────────────────────────────────────
+        // ── Boot ─────────────────────────────────────────────────
         async function startCamera() {
             btnAllow.style.display = 'none';
             bootSpinner.style.display = 'block';
-
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({
+                var stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
                     audio: false
                 });
                 camVideo.srcObject = stream;
-                pipVideo.srcObject = stream;   // same stream → pip preview
+                pipVideo.srcObject = stream;
                 await camVideo.play();
                 await pipVideo.play();
 
                 camOverlay.classList.add('hidden');
-                setTimeout(() => camOverlay.style.display = 'none', 450);
+                setTimeout(function () { camOverlay.style.display = 'none'; }, 450);
 
-                resize();
-                ctx.fillStyle = '#000';
-                ctx.fillRect(0, 0, c.width, c.height);
-
-                const hands = new Hands({
-                    locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
+                var h = new Hands({
+                    locateFile: function (file) {
+                        return 'https://cdn.jsdelivr.net/npm/@mediapipe/hands/' + file;
+                    }
                 });
-                hands.setOptions({
+                h.setOptions({
                     maxNumHands: 1,
                     modelComplexity: 1,
                     minDetectionConfidence: 0.5,
                     minTrackingConfidence: 0.5
                 });
-                hands.onResults(onResults);
+                h.onResults(run);
 
-                const camera = new Camera(camVideo, {
-                    onFrame: async () => await hands.send({ image: camVideo }),
+                var cam = new Camera(camVideo, {
+                    onFrame: async function () { await h.send({ image: camVideo }); },
                     width: 1280, height: 720
                 });
-                await camera.start();
+                cam.start();
 
             } catch (err) {
                 bootSpinner.style.display = 'none';
