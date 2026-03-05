@@ -1,0 +1,1 @@
+window.HANDBOARD_IP = '192.168.1.151'; window.HANDBOARD_PORT = '8443';

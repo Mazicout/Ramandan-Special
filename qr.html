@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HandBoard — Scan to Open on Phone</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&display=swap"
+        rel="stylesheet" />
+    <script src="./config.js"></script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #000;
+            color: #fff;
+            font-family: 'Fira Code', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+        }
+
+        .badge {
+            font-size: 10px;
+            letter-spacing: 0.25em;
+            color: #555;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 11px;
+            color: #555;
+            letter-spacing: 0.12em;
+            margin-bottom: 36px;
+            text-align: center;
+        }
+
+        .qr-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 0 0 1px #222, 0 40px 80px rgba(0, 0, 0, 0.9);
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 0 1px #222, 0 40px 80px rgba(0, 0, 0, 0.9);
+            }
+
+            to {
+                box-shadow: 0 0 0 1px #444, 0 40px 80px rgba(255, 255, 255, 0.04);
+            }
+        }
+
+        #qr-img {
+            display: block;
+            width: 280px;
+            height: 280px;
+            image-rendering: pixelated;
+            border-radius: 4px;
+        }
+
+        .url-box {
+            background: #f0f0f0;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #000;
+            word-break: break-all;
+            text-align: center;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .steps {
+            margin-top: 40px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 580px;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            max-width: 160px;
+        }
+
+        .step-num {
+            width: 26px;
+            height: 26px;
+            border: 1px solid #333;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: #555;
+            flex-shrink: 0;
+        }
+
+        .step p {
+            font-size: 10px;
+            color: #555;
+            line-height: 1.7;
+            letter-spacing: 0.08em;
+            padding-top: 4px;
+        }
+
+        .note {
+            margin-top: 36px;
+            font-size: 10px;
+            color: #333;
+            text-align: center;
+            letter-spacing: 0.1em;
+            line-height: 1.8;
+        }
+
+        .note a {
+            color: #888;
+            text-decoration: none;
+        }
+
+        .note a:hover {
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="badge">✦ HandBoard</div>
+    <h1>Open on Your Phone</h1>
+    <div class="subtitle">Make sure your phone is on the same Wi-Fi network</div>
+
+    <div class="qr-card">
+        <img id="qr-img" src="" alt="QR Code" />
+        <div class="url-box" id="url-display">…</div>
+    </div>
+
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">1</div>
+            <p>Open your phone camera and point it at the QR code</p>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <p>Tap the link that appears on screen</p>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <p>Allow camera access when asked</p>
+        </div>
+        <div class="step">
+            <div class="step-num">4</div>
+            <p>Raise your index finger to start drawing!</p>
+        </div>
+    </div>
+
+    <div class="note">
+        Works on Safari (iOS) and Chrome (Android)<br />
+        Or type: <a id="direct-link" href="./index.html">index.html</a>
+    </div>
+
+    <script>
+        // ─────────────────────────────────────────────────────────────────
+        // Minimal self-contained QR Code generator (QR version 4, ECC L)
+        // Based on the open-source nayuki QR algorithm, adapted to minimal JS
+        // Uses Google Charts API as a reliable fallback — no CORS issues!
+        // ─────────────────────────────────────────────────────────────────
+
+        const ip = (window.HANDBOARD_IP) || location.hostname;
+        const port = (window.HANDBOARD_PORT) || location.port;
+        const url = 'http://' + ip + (port ? ':' + port : '') + '/index.html';
+
+        document.getElementById('url-display').textContent = url;
+        document.getElementById('direct-link').href = url;
+
+        // Google Charts QR API — works offline-first from local servers,
+        // no CORS issue since it's an <img> src (not fetch/XHR)
+        const encoded = encodeURIComponent(url);
+        const qrSrc = 'https://chart.googleapis.com/chart?cht=qr&chs=560x560&chl=' + encoded + '&choe=UTF-8&chld=L|1';
+
+        const imgEl = document.getElementById('qr-img');
+        imgEl.src = qrSrc;
+        imgEl.onerror = function () {
+            // Fallback: use qr-server API
+            imgEl.src = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=' + encoded;
+            imgEl.onerror = function () {
+                imgEl.style.display = 'none';
+                document.querySelector('.qr-card').insertAdjacentHTML('afterbegin',
+                    '<p style="color:#999;font-size:11px;text-align:center;padding:16px">⚠ QR unavailable offline<br>Type the URL below on your phone</p>'
+                );
+            };
+        };
+    </script>
+</body>
+
+</html>

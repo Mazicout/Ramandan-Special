@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>HandBoard — Draw With Your Hand</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&display=swap"
+        rel="stylesheet" />
+
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #000;
+            --fg: #fff;
+            --muted: #555;
+            --border: #333;
+            --accent: #fff;
+            --cam-h: 160px;
+            --toolbar-h: 52px;
+        }
+
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--fg);
+            font-family: 'Fira Code', monospace;
+            touch-action: none;
+        }
+
+        /* ── Layout ── */
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Top toolbar */
+        #toolbar {
+            height: var(--toolbar-h);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            gap: 10px;
+        }
+
+        #toolbar h1 {
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--fg);
+            white-space: nowrap;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--fg);
+            font-family: 'Fira Code', monospace;
+            font-size: 11px;
+            padding: 6px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.15s, border-color 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: #111;
+            border-color: var(--fg);
+        }
+
+        .btn.active {
+            background: var(--fg);
+            color: var(--bg);
+        }
+
+        .separator {
+            width: 1px;
+            height: 20px;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        /* Size picker */
+        #size-label {
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        #brush-size {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 70px;
+            height: 3px;
+            background: var(--border);
+            outline: none;
+            border-radius: 2px;
+        }
+
+        #brush-size::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--fg);
+            cursor: pointer;
+        }
+
+        /* Canvas area */
+        #canvas-wrap {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #draw-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: none;
+        }
+
+        /* Cursor dot */
+        #cursor-dot {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            transition: transform 0.05s;
+            display: none;
+            z-index: 10;
+        }
+
+        #cursor-dot.draw {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        #cursor-dot.erase {
+            border-color: #888;
+            background: rgba(80, 80, 80, 0.2);
+        }
+
+        /* Status overlay */
+        #status {
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.75);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 16px;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            pointer-events: none;
+            z-index: 20;
+            transition: opacity 0.4s;
+        }
+
+        /* Gesture badge */
+        #gesture-badge {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 4px 12px;
+            font-size: 10px;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        /* ── Camera panel ── */
+        #cam-panel {
+            height: var(--cam-h);
+            border-top: 1px solid var(--border);
+            background: #000;
+            display: flex;
+            align-items: stretch;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        #cam-label {
+            position: absolute;
+            top: 8px;
+            left: 12px;
+            font-size: 9px;
+            letter-spacing: 0.15em;
+            color: var(--muted);
+            text-transform: uppercase;
+            z-index: 5;
+        }
+
+        #cam-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(1) contrast(1.1);
+            transform: scaleX(-1);
+            /* mirror */
+            display: block;
+        }
+
+        /* Hand skeleton overlay on video */
+        #cam-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        /* Loading spinner */
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            gap: 20px;
+        }
+
+        #loader p {
+            font-size: 12px;
+            letter-spacing: 0.2em;
+            color: var(--muted);
+        }
+
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 2px solid var(--border);
+            border-top-color: var(--fg);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        #app {
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* ── QR Modal ── */
+        #qr-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        #qr-overlay.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        #qr-box {
+            background: #fff;
+            color: #000;
+            border-radius: 10px;
+            padding: 28px 28px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            max-width: 90vw;
+            box-shadow: 0 0 0 1px #333, 0 20px 60px rgba(0, 0, 0, 0.8);
+            animation: popIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.85);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        #qr-box p {
+            font-family: 'Fira Code', monospace;
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            color: #444;
+            text-align: center;
+        }
+
+        #qr-url {
+            font-family: 'Fira Code', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            color: #000;
+            word-break: break-all;
+            text-align: center;
+            max-width: 240px;
+        }
+
+        #qr-close {
+            background: #000;
+            color: #fff;
+            border: none;
+            font-family: 'Fira Code', monospace;
+            font-size: 11px;
+            padding: 8px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            letter-spacing: 0.1em;
+        }
+
+        #qr-close:hover {
+            background: #222;
+        }
+
+        #qr-canvas {
+            display: block;
+        }
+
+        /* Camera permission overlay */
+        #cam-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.92);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            gap: 18px;
+            transition: opacity 0.4s;
+        }
+
+        #cam-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #cam-overlay .icon {
+            font-size: 48px;
+        }
+
+        #cam-overlay h2 {
+            font-size: 16px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+        }
+
+        #cam-overlay p {
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-align: center;
+            max-width: 280px;
+            line-height: 1.8;
+        }
+
+        #btn-allow {
+            margin-top: 8px;
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            font-family: 'Fira Code', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 12px 32px;
+            cursor: pointer;
+            letter-spacing: 0.1em;
+            transition: opacity 0.15s;
+        }
+
+        #btn-allow:hover {
+            opacity: 0.85;
+        }
+
+        .spinner {
+            width: 28px;
+            height: 28px;
+            border: 2px solid var(--border);
+            border-top-color: var(--fg);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        #app {
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Mobile hint */
+        @media (max-width: 600px) {
+            :root {
+                --cam-h: 130px;
+                --toolbar-h: 44px;
+            }
+
+            #toolbar h1 {
+                font-size: 11px;
+            }
+
+            .btn {
+                font-size: 10px;
+                padding: 5px 9px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Camera permission overlay -->
+    <div id="cam-overlay">
+        <div class="icon">📷</div>
+        <h2>Camera Access</h2>
+        <p>HandBoard needs your camera to track your hand. Tap allow when your browser asks.</p>
+        <button id="btn-allow">Open Camera</button>
+        <div class="spinner" id="boot-spinner" style="display:none"></div>
+    </div>
+
+    <!-- Main app (always visible beneath overlay) -->
+    <div id="app">
+
+        <!-- Toolbar -->
+        <div id="toolbar">
+            <h1>✦ HandBoard</h1>
+
+            <div class="btn-group">
+                <button class="btn active" id="btn-draw">✏ Draw</button>
+                <button class="btn" id="btn-erase">◻ Erase</button>
+            </div>
+
+            <div class="separator"></div>
+
+            <span id="size-label">Size</span>
+            <input type="range" id="brush-size" min="2" max="40" value="5" />
+
+            <div class="separator"></div>
+
+            <button class="btn" id="btn-clear">⊘ Clear</button>
+            <button class="btn" id="btn-save">↓ Save</button>
+            <div class="separator"></div>
+            <button class="btn" id="btn-qr" title="Show QR code to open on phone">⊞ QR</button>
+        </div>
+
+        <!-- Drawing canvas -->
+        <div id="canvas-wrap">
+            <canvas id="draw-canvas"></canvas>
+            <div id="cursor-dot"></div>
+            <div id="status">Initializing camera…</div>
+            <div id="gesture-badge">☞ Raise index finger to draw · Pinch to erase</div>
+        </div>
+
+        <!-- Camera preview -->
+        <div id="cam-panel">
+            <span id="cam-label">📷 Live Feed</span>
+            <video id="cam-video" autoplay playsinline muted></video>
+            <canvas id="cam-canvas"></canvas>
+        </div>
+
+    </div>
+
+    <!-- QR Modal -->
+    <div id="qr-overlay">
+        <div id="qr-box">
+            <p>SCAN TO OPEN ON PHONE</p>
+            <canvas id="qr-canvas"></canvas>
+            <div id="qr-url"></div>
+            <button id="qr-close">✕ Close</button>
+        </div>
+    </div>
+
+    <!-- QR Code library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+    <!-- MediaPipe CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1620248257/drawing_utils.js"
+        crossorigin="anonymous"></script>
+
+    <script>
+        // ─────────────────────────────────────────────
+        // DOM refs
+        // ─────────────────────────────────────────────
+        const loader = document.getElementById('loader');
+        const appEl = document.getElementById('app');
+        const drawCanvas = document.getElementById('draw-canvas');
+        const camVideo = document.getElementById('cam-video');
+        const camCanvas = document.getElementById('cam-canvas');
+        const cursorDot = document.getElementById('cursor-dot');
+        const statusEl = document.getElementById('status');
+        const gestureBadge = document.getElementById('gesture-badge');
+        const btnDraw = document.getElementById('btn-draw');
+        const btnErase = document.getElementById('btn-erase');
+        const btnClear = document.getElementById('btn-clear');
+        const btnSave = document.getElementById('btn-save');
+        const btnQR = document.getElementById('btn-qr');
+        const qrOverlay = document.getElementById('qr-overlay');
+        const qrCanvas = document.getElementById('qr-canvas');
+        const qrUrlEl = document.getElementById('qr-url');
+        const qrClose = document.getElementById('qr-close');
+        const brushSlider = document.getElementById('brush-size');
+        const canvasWrap = document.getElementById('canvas-wrap');
+
+        const ctx = drawCanvas.getContext('2d');
+        const camCtx = camCanvas.getContext('2d');
+
+        // ─────────────────────────────────────────────
+        // State
+        // ─────────────────────────────────────────────
+        let mode = 'draw';   // 'draw' | 'erase'
+        let brushSize = 5;
+        let isDrawing = false;
+        let prevX = null;
+        let prevY = null;
+        let handVisible = false;
+
+        // ─────────────────────────────────────────────
+        // Canvas resize
+        // ─────────────────────────────────────────────
+        function resizeCanvases() {
+            const wrap = canvasWrap.getBoundingClientRect();
+            // preserve drawing
+            const tmp = document.createElement('canvas');
+            tmp.width = drawCanvas.width;
+            tmp.height = drawCanvas.height;
+            tmp.getContext('2d').drawImage(drawCanvas, 0, 0);
+
+            drawCanvas.width = wrap.width;
+            drawCanvas.height = wrap.height;
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+            ctx.drawImage(tmp, 0, 0);
+
+            const cam = camCanvas.parentElement.getBoundingClientRect();
+            camCanvas.width = cam.width;
+            camCanvas.height = cam.height;
+        }
+
+        window.addEventListener('resize', resizeCanvases);
+
+        // ─────────────────────────────────────────────
+        // Drawing helpers
+        // ─────────────────────────────────────────────
+        function drawStroke(x, y) {
+            ctx.lineWidth = mode === 'erase' ? brushSize * 4 : brushSize;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = mode === 'erase' ? '#000' : '#fff';
+            ctx.globalCompositeOperation = mode === 'erase' ? 'destination-out' : 'source-over';
+
+            if (prevX === null) {
+                ctx.beginPath();
+                ctx.arc(x, y, ctx.lineWidth / 2, 0, Math.PI * 2);
+                ctx.fillStyle = ctx.strokeStyle;
+                ctx.fill();
+            } else {
+                ctx.beginPath();
+                ctx.moveTo(prevX, prevY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+            prevX = x;
+            prevY = y;
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            prevX = null;
+            prevY = null;
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        // ─────────────────────────────────────────────
+        // Toolbar bindings
+        // ─────────────────────────────────────────────
+        btnDraw.addEventListener('click', () => {
+            mode = 'draw';
+            btnDraw.classList.add('active');
+            btnErase.classList.remove('active');
+        });
+
+        btnErase.addEventListener('click', () => {
+            mode = 'erase';
+            btnErase.classList.add('active');
+            btnDraw.classList.remove('active');
+        });
+
+        btnClear.addEventListener('click', () => {
+            ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+        });
+
+        // ── QR Modal ──
+        let qrGenerated = false;
+        btnQR.addEventListener('click', () => {
+            const url = window.location.href;
+            qrUrlEl.textContent = url;
+            if (!qrGenerated) {
+                QRCode.toCanvas(qrCanvas, url, {
+                    width: 220,
+                    margin: 1,
+                    color: { dark: '#000000', light: '#ffffff' }
+                }, (err) => { if (err) console.error(err); });
+                qrGenerated = true;
+            }
+            qrOverlay.classList.add('show');
+        });
+        qrClose.addEventListener('click', () => qrOverlay.classList.remove('show'));
+        qrOverlay.addEventListener('click', (e) => { if (e.target === qrOverlay) qrOverlay.classList.remove('show'); });
+
+        btnSave.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = `handboard_${Date.now()}.png`;
+            link.href = drawCanvas.toDataURL('image/png');
+            link.click();
+        });
+
+        brushSlider.addEventListener('input', () => {
+            brushSize = parseInt(brushSlider.value);
+            updateCursorSize();
+        });
+
+        function updateCursorSize() {
+            const s = mode === 'erase' ? brushSize * 4 : brushSize;
+            const clamped = Math.max(s, 10);
+            cursorDot.style.width = clamped + 'px';
+            cursorDot.style.height = clamped + 'px';
+        }
+        updateCursorSize();
+
+        // ─────────────────────────────────────────────
+        // Gesture detection helpers
+        // ─────────────────────────────────────────────
+        // Landmark indices (MediaPipe Hands)
+        // 8 = index tip, 6 = index pip, 4 = thumb tip, 12 = middle tip
+        const WRIST = 0;
+        const THUMB_TIP = 4;
+        const INDEX_TIP = 8;
+        const INDEX_PIP = 6;
+        const MIDDLE_TIP = 12;
+        const MIDDLE_PIP = 10;
+        const RING_TIP = 16;
+        const RING_PIP = 14;
+        const PINKY_TIP = 20;
+        const PINKY_PIP = 18;
+
+        function dist(a, b) {
+            const dx = a.x - b.x;
+            const dy = a.y - b.y;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        // Finger is "up" if tip is above pip (lower y value)
+        function fingerUp(lm, tip, pip) {
+            return lm[tip].y < lm[pip].y;
+        }
+
+        // Pinch: thumb tip close to index tip
+        function isPinch(lm) {
+            return dist(lm[THUMB_TIP], lm[INDEX_TIP]) < 0.07;
+        }
+
+        // Only index finger up → draw
+        function isIndexPointing(lm) {
+            return (
+                fingerUp(lm, INDEX_TIP, INDEX_PIP) &&
+                !fingerUp(lm, MIDDLE_TIP, MIDDLE_PIP) &&
+                !fingerUp(lm, RING_TIP, RING_PIP) &&
+                !fingerUp(lm, PINKY_TIP, PINKY_PIP)
+            );
+        }
+
+        // Open palm ✋ → erase
+        function isOpenPalm(lm) {
+            return (
+                fingerUp(lm, INDEX_TIP, INDEX_PIP) &&
+                fingerUp(lm, MIDDLE_TIP, MIDDLE_PIP) &&
+                fingerUp(lm, RING_TIP, RING_PIP) &&
+                fingerUp(lm, PINKY_TIP, PINKY_PIP)
+            );
+        }
+
+        // ─────────────────────────────────────────────
+        // Status helper
+        // ─────────────────────────────────────────────
+        let statusTimer;
+        function setStatus(msg, hideAfter = 0) {
+            statusEl.textContent = msg;
+            statusEl.style.opacity = '1';
+            clearTimeout(statusTimer);
+            if (hideAfter) {
+                statusTimer = setTimeout(() => { statusEl.style.opacity = '0'; }, hideAfter);
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        // MediaPipe result handler
+        // ─────────────────────────────────────────────
+        let frameCount = 0;
+
+        function onResults(results) {
+            frameCount++;
+
+            // Draw skeleton on cam preview
+            camCtx.clearRect(0, 0, camCanvas.width, camCanvas.height);
+            if (results.multiHandLandmarks) {
+                for (const landmarks of results.multiHandLandmarks) {
+                    drawConnectors(camCtx, landmarks, HAND_CONNECTIONS, { color: '#555', lineWidth: 1 });
+                    drawLandmarks(camCtx, landmarks, { color: '#fff', lineWidth: 1, radius: 2 });
+                }
+            }
+
+            if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+                handVisible = false;
+                stopDrawing();
+                cursorDot.style.display = 'none';
+                if (frameCount > 30) setStatus('✦ No hand detected', 0);
+                return;
+            }
+
+            handVisible = true;
+            const lm = results.multiHandLandmarks[0];
+            const indexTip = lm[INDEX_TIP];
+
+            // Map normalised coords → canvas coords (video is mirrored so flip x)
+            const wrap = canvasWrap.getBoundingClientRect();
+            const cx = (1 - indexTip.x) * wrap.width;
+            const cy = indexTip.y * wrap.height;
+
+            // Position cursor dot
+            cursorDot.style.display = 'block';
+            cursorDot.style.left = cx + 'px';
+            cursorDot.style.top = cy + 'px';
+
+            // Gesture →  mode
+            if (isOpenPalm(lm) && !isPinch(lm)) {
+                mode = 'erase';
+                btnErase.classList.add('active');
+                btnDraw.classList.remove('active');
+                cursorDot.className = 'erase';
+                updateCursorSize();
+                setStatus('✦ Eraser mode — open palm', 800);
+                isDrawing = true;
+                drawStroke(cx, cy);
+                gestureBadge.textContent = '✋ Erasing…';
+            } else if (isIndexPointing(lm)) {
+                mode = 'draw';
+                btnDraw.classList.add('active');
+                btnErase.classList.remove('active');
+                cursorDot.className = 'draw';
+                updateCursorSize();
+                isDrawing = true;
+                drawStroke(cx, cy);
+                gestureBadge.textContent = '☞ Drawing…';
+                statusEl.style.opacity = '0';
+            } else if (isPinch(lm)) {
+                stopDrawing();
+                cursorDot.className = '';
+                setStatus('✦ Pinch detected — lifted', 600);
+                gestureBadge.textContent = '🤏 Lift to stop drawing';
+            } else {
+                stopDrawing();
+                cursorDot.className = '';
+                gestureBadge.textContent = '☞ Raise index finger to draw · Open palm to erase';
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        // Boot
+        // ─────────────────────────────────────────────
+        const camOverlay = document.getElementById('cam-overlay');
+        const btnAllow = document.getElementById('btn-allow');
+        const bootSpinner = document.getElementById('boot-spinner');
+
+        async function startCamera() {
+            btnAllow.style.display = 'none';
+            bootSpinner.style.display = 'block';
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+                    audio: false
+                });
+                camVideo.srcObject = stream;
+                await camVideo.play();
+
+                // Hide overlay — camera is live
+                camOverlay.classList.add('hidden');
+                setTimeout(() => camOverlay.style.display = 'none', 400);
+
+                resizeCanvases();
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+
+                setStatus('✦ Loading hand model…');
+
+                const hands = new Hands({
+                    locateFile: (file) =>
+                        `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/${file}`
+                });
+                hands.setOptions({
+                    maxNumHands: 1,
+                    modelComplexity: 1,
+                    minDetectionConfidence: 0.7,
+                    minTrackingConfidence: 0.6
+                });
+                hands.onResults(onResults);
+
+                const camera = new Camera(camVideo, {
+                    onFrame: async () => { await hands.send({ image: camVideo }); },
+                    width: 1280, height: 720
+                });
+                await camera.start();
+                setStatus('✦ Ready — raise your index finger!', 3000);
+
+            } catch (err) {
+                // Show the allow button again with a retry message
+                bootSpinner.style.display = 'none';
+                btnAllow.style.display = 'block';
+                btnAllow.textContent = '⟳ Try Again';
+                document.querySelector('#cam-overlay p').textContent =
+                    'Could not access camera. Make sure you allowed permission, then tap retry.';
+            }
+        }
+
+        btnAllow.addEventListener('click', startCamera);
+
+        // Auto-start immediately on page load
+        startCamera();
+    </script>
+</body>
+
+</html>
