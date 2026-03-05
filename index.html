@@ -563,13 +563,13 @@
             if (palming) {
                 // ✋ Open palm = ERASE
                 if (mode !== 'erase') {
-                    if (drawing && cur) strokes.push(cur);
                     mode = 'erase';
                     drawing = false;
                 }
                 if (!drawing) {
                     drawing = true;
                     cur = { pts: [], erase: true, width: brushSize };
+                    strokes.push(cur); // PUSH IMMEDIATELY SO IT DRAWS REAL-TIME
                 }
                 cur.pts.push({ x: sx, y: sy });
                 hintEl.textContent = '✋ Erasing…';
@@ -577,21 +577,21 @@
             } else if (pointing) {
                 // ☝️ One finger = DRAW
                 if (mode !== 'draw') {
-                    if (drawing && cur) strokes.push(cur);
                     mode = 'draw';
                     drawing = false;
                 }
                 if (!drawing) {
                     drawing = true;
                     cur = { pts: [], erase: false, width: brushSize };
+                    strokes.push(cur); // PUSH IMMEDIATELY SO IT DRAWS REAL-TIME
                 }
                 cur.pts.push({ x: sx, y: sy });
                 hintEl.textContent = '☝️ Drawing…';
 
             } else {
                 // Anything else = PEN LIFTED
-                if (drawing && cur) { strokes.push(cur); cur = null; }
                 drawing = false;
+                cur = null;
                 hintEl.textContent = '✊ Pen lifted — move freely';
             }
         }
