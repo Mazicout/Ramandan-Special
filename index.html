@@ -44,7 +44,9 @@
             width: 100vw;
             height: 100vh;
             display: block;
-            /* removed scaleX(-1) so coordinates are 1:1 with screen */
+            transform: scaleX(-1);
+            /* Mirror canvas to match front-facing camera */
+            z-index: 10;
         }
 
         /* ── Floating toolbar ── */
@@ -533,9 +535,9 @@
             drawConnectors(ctx, lm, HAND_CONNECTIONS, { color: 'rgba(255,255,255,0.15)', lineWidth: 1 });
             drawLandmarks(ctx, lm, { color: 'rgba(255,255,255,0.5)', lineWidth: 1, radius: 2 });
 
-            // Index tip — flip X because camera raw frame is mirrored relative to the user
+            // Index tip — use raw ind.x since canvas is mirrored in CSS
             var ind = lm[8];
-            var rx = (1 - ind.x) * c.width;
+            var rx = ind.x * c.width;
             var ry = ind.y * c.height;
 
             // Simple 0.45 smoothing (user's preferred sensitivity)
