@@ -431,7 +431,7 @@
         <canvas id="draw-canvas"></canvas>
         <div id="cursor-dot"></div>
         <div id="status">Starting…</div>
-        <div id="hint">✌️ Two fingers (index+middle) = Draw &nbsp;·&nbsp; ✋ Open palm = Erase</div>
+        <div id="hint">👌 Pinch (OK sign) = Draw &nbsp;·&nbsp; ✋ Open palm = Erase</div>
 
         <!-- Floating toolbar -->
         <div id="toolbar">
@@ -632,12 +632,12 @@
             return (lm[mcp].y - lm[tip].y) > threshold;
         }
 
-        // Index + Middle both up = DRAW (peace/V sign ✌️)
-        function isTwoFingerDraw(lm) {
-            return fingerExtended(lm, INDEX_TIP, INDEX_MCP) &&
-                fingerExtended(lm, MIDDLE_TIP, MIDDLE_MCP) &&
-                !fingerExtended(lm, RING_TIP, RING_MCP) &&
-                !fingerExtended(lm, PINKY_TIP, PINKY_MCP);
+        // 👌 OK/pinch: thumb tip close to index tip = DRAW
+        function isPinchDraw(lm) {
+            const pinchDist = dist(lm[THUMB_TIP], lm[INDEX_TIP]);
+            // threshold loosens with sensitivity (higher = easier to trigger)
+            const threshold = 0.05 + (sensitivity - 1) * 0.008; // 0.05 – 0.122
+            return pinchDist < threshold;
         }
 
         function isOpenPalm(lm) {
@@ -686,11 +686,19 @@
             }
 
             const lm = results.multiHandLandmarks[0];
-            const tip = lm[INDEX_TIP];
 
-            // Map → screen coords (video is mirrored, so flip X)
-            const rawX = (1 - tip.x) * window.innerWidth;
-            const rawY = tip.y * window.innerHeight;
+            // Detect pinch early so we can use pinch midpoint as cursor
+            const pinching = isPinchDraw(lm);
+
+            // Cursor position: pinch midpoint when 👌, else index tip
+            let rawX, rawY;
+            if (pinching) {
+                rawX = (1 - (lm[THUMB_TIP].x + lm[INDEX_TIP].x) / 2) * window.innerWidth;
+                rawY = ((lm[THUMB_TIP].y + lm[INDEX_TIP].y) / 2) * window.innerHeight;
+            } else {
+                rawX = (1 - lm[INDEX_TIP].x) * window.innerWidth;
+                rawY = lm[INDEX_TIP].y * window.innerHeight;
+            }
             const { x: cx, y: cy } = smooth(rawX, rawY);
 
             // Show cursor
@@ -708,13 +716,13 @@
                 hintEl.textContent = '✋ Open palm — Erasing';
                 setStatus('✦ Eraser', 800);
 
-            } else if (isTwoFingerDraw(lm)) {
-                // Index + Middle up (✌️) = DRAW
+            } else if (pinching) {
+                // 👌 Pinch/OK = DRAW
                 mode = 'draw';
                 btnDraw.classList.add('active'); btnErase.classList.remove('active');
                 cursorDot.className = 'drawing';
                 drawStroke(cx, cy);
-                hintEl.textContent = '✌️ Drawing…';
+                hintEl.textContent = '👌 Drawing…';
                 statusEl.style.opacity = '0';
 
             } else {
@@ -722,7 +730,7 @@
                 liftPen();
                 smoothX = null; smoothY = null;
                 cursorDot.className = 'lifted';
-                hintEl.textContent = '✌️ Two fingers = Draw · ✋ Open palm = Erase';
+                hintEl.textContent = '👌 Pinch (OK sign) = Draw · ✋ Open palm = Erase';
             }
         }
 
