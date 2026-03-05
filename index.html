@@ -431,7 +431,7 @@
         <canvas id="draw-canvas"></canvas>
         <div id="cursor-dot"></div>
         <div id="status">Starting…</div>
-        <div id="hint">☞ Index finger = Draw &nbsp;·&nbsp; Open palm = Erase &nbsp;·&nbsp; Fist = Lift pen</div>
+        <div id="hint">✌️ Two fingers (index+middle) = Draw &nbsp;·&nbsp; ✋ Open palm = Erase</div>
 
         <!-- Floating toolbar -->
         <div id="toolbar">
@@ -632,8 +632,12 @@
             return (lm[mcp].y - lm[tip].y) > threshold;
         }
 
-        function isIndexPointing(lm) {
-            return fingerExtended(lm, INDEX_TIP, INDEX_MCP);
+        // Index + Middle both up = DRAW (peace/V sign ✌️)
+        function isTwoFingerDraw(lm) {
+            return fingerExtended(lm, INDEX_TIP, INDEX_MCP) &&
+                fingerExtended(lm, MIDDLE_TIP, MIDDLE_MCP) &&
+                !fingerExtended(lm, RING_TIP, RING_MCP) &&
+                !fingerExtended(lm, PINKY_TIP, PINKY_MCP);
         }
 
         function isOpenPalm(lm) {
@@ -696,38 +700,29 @@
 
             // ── Gesture logic ──
             if (isOpenPalm(lm)) {
-                // All fingers up = ERASE
+                // All 4 fingers up = ERASE
                 mode = 'erase';
                 btnErase.classList.add('active'); btnDraw.classList.remove('active');
                 cursorDot.className = 'erasing';
-                liftPen(); // no continuous erase stroke; use toolbar for erasing
-                hintEl.textContent = '✋ Open palm — Erase mode';
-                setStatus('✦ Eraser', 1000);
-                // Draw erase stroke
                 drawStroke(cx, cy);
-                currMode = 'erase';
+                hintEl.textContent = '✋ Open palm — Erasing';
+                setStatus('✦ Eraser', 800);
 
-            } else if (isFist(lm)) {
-                // Fist = LIFT PEN (stop drawing)
-                liftPen();
-                smoothX = null; smoothY = null;
-                cursorDot.className = 'lifted';
-                hintEl.textContent = '✊ Fist — Pen lifted';
-
-            } else if (isIndexPointing(lm)) {
-                // Index up = DRAW
+            } else if (isTwoFingerDraw(lm)) {
+                // Index + Middle up (✌️) = DRAW
                 mode = 'draw';
                 btnDraw.classList.add('active'); btnErase.classList.remove('active');
                 cursorDot.className = 'drawing';
                 drawStroke(cx, cy);
-                hintEl.textContent = '☞ Drawing…';
+                hintEl.textContent = '✌️ Drawing…';
                 statusEl.style.opacity = '0';
 
             } else {
-                // Ambiguous — lift pen
+                // Anything else = lift pen
                 liftPen();
+                smoothX = null; smoothY = null;
                 cursorDot.className = 'lifted';
-                hintEl.textContent = '☞ Index finger = Draw · Open palm = Erase · Fist = Lift pen';
+                hintEl.textContent = '✌️ Two fingers = Draw · ✋ Open palm = Erase';
             }
         }
 
