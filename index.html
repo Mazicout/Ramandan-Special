@@ -329,14 +329,12 @@
     <video id="cam-video" autoplay playsinline muted></video>
     <canvas id="c"></canvas>
 
-    <div id="hint">☝️ One finger = Draw &nbsp;·&nbsp; 👌 Pinch = Lift pen (move)</div>
+    <!-- Hint -->
+    <div id="hint">☝️ Index finger = Draw &nbsp;·&nbsp; ✋ Open palm = Erase &nbsp;·&nbsp; ✊ Fist = Lift pen</div>
 
     <!-- Toolbar -->
     <div id="toolbar">
         <h1>✦ HandBoard</h1>
-        <div class="sep"></div>
-        <button class="btn active" id="btn-draw">✏ Draw</button>
-        <button class="btn" id="btn-erase">◻ Erase</button>
         <div class="sep"></div>
         <div class="slider-wrap">
             <span class="slider-label">Size</span>
@@ -381,8 +379,6 @@
         var c = document.getElementById('c');
         var ctx = c.getContext('2d');
         var hintEl = document.getElementById('hint');
-        var btnDraw = document.getElementById('btn-draw');
-        var btnErase = document.getElementById('btn-erase');
         var btnClear = document.getElementById('btn-clear');
         var btnSave = document.getElementById('btn-save');
         var btnQR = document.getElementById('btn-qr');
@@ -405,14 +401,6 @@
         var sx = null, sy = null;  // smoothed cursor
 
         // ── Toolbar ───────────────────────────────────────────────
-        btnDraw.addEventListener('click', function () {
-            mode = 'draw';
-            btnDraw.classList.add('active'); btnErase.classList.remove('active');
-        });
-        btnErase.addEventListener('click', function () {
-            mode = 'erase';
-            btnErase.classList.add('active'); btnDraw.classList.remove('active');
-        });
         brushSlider.addEventListener('input', function () { brushSize = +this.value; });
 
         btnClear.addEventListener('click', function () {
@@ -488,16 +476,33 @@
             }
         }
 
-        // ── Pinch detection (with hysteresis/debounce) ───────
-        var wasPinching = false;
-        function updatePinch(lm) {
-            var dx = lm[4].x - lm[8].x;
-            var dy = lm[4].y - lm[8].y;
-            var dist = Math.sqrt(dx * dx + dy * dy);
-            // Hysteresis: harder to start pinching, easier to KEEP pinching
-            var threshold = wasPinching ? 0.08 : 0.05;
-            wasPinching = dist < threshold;
-            return wasPinching;
+        // ── Gestures ─────────────────────────────────────────
+        const THUMB_TIP = 4, INDEX_TIP = 8, INDEX_MCP = 5,
+            MIDDLE_TIP = 12, MIDDLE_MCP = 9, RING_TIP = 16,
+            RING_MCP = 13, PINKY_TIP = 20, PINKY_MCP = 17;
+
+        function fingerExtended(lm, tip, mcp) {
+            return (lm[mcp].y - lm[tip].y) > 0.04;
+        }
+
+        function isIndexPointing(lm) {
+            return fingerExtended(lm, INDEX_TIP, INDEX_MCP) &&
+                !fingerExtended(lm, MIDDLE_TIP, MIDDLE_MCP) &&
+                !fingerExtended(lm, RING_TIP, RING_MCP) &&
+                !fingerExtended(lm, PINKY_TIP, PINKY_MCP);
+        }
+
+        function isOpenPalm(lm) {
+            return fingerExtended(lm, INDEX_TIP, INDEX_MCP) &&
+                fingerExtended(lm, MIDDLE_TIP, MIDDLE_MCP) &&
+                fingerExtended(lm, RING_TIP, RING_MCP) &&
+                fingerExtended(lm, PINKY_TIP, PINKY_MCP);
+        }
+
+        function isFist(lm) {
+            return !fingerExtended(lm, INDEX_TIP, INDEX_MCP) &&
+                !fingerExtended(lm, MIDDLE_TIP, MIDDLE_MCP) &&
+                !fingerExtended(lm, RING_TIP, RING_MCP);
         }
 
         // ── MediaPipe result handler (adaptive smoothing) ─────────
@@ -517,7 +522,7 @@
                 if (drawing && cur) strokes.push(cur);
                 cur = null; drawing = false;
                 sx = null; sy = null;
-                hintEl.textContent = '☝️ One finger = Draw · 👌 Pinch = Move (lift pen)';
+                hintEl.textContent = '☝️ Index finger = Draw · ✋ Open palm = Erase · ✊ Fist = Lift pen';
                 return;
             }
 
@@ -527,9 +532,9 @@
             drawConnectors(ctx, lm, HAND_CONNECTIONS, { color: 'rgba(255,255,255,0.15)', lineWidth: 1 });
             drawLandmarks(ctx, lm, { color: 'rgba(255,255,255,0.5)', lineWidth: 1, radius: 2 });
 
-            // Index tip — flip X because canvas is NOT CSS-mirrored here
+            // Index tip — tracking inversion fix (just ind.x, not 1-ind.x)
             var ind = lm[8];
-            var rx = (1 - ind.x) * c.width;
+            var rx = ind.x * c.width;
             var ry = ind.y * c.height;
 
             // Adaptive smoothing & Dead zone
@@ -541,38 +546,58 @@
                 var dist = Math.sqrt(dx * dx + dy * dy);
 
                 // Dead zone: ignore micro-jitters completely
-                if (dist > 1.5) {
-                    // Adaptive alpha: fast move = 0.5 (responsive), extremely slow move = 0.1 (stable)
-                    // Cap at 0.6 so it never feels completely raw/jittery
-                    var alpha = Math.min(0.6, 0.1 + (dist / 100));
+                if (dist > 1.0) {
+                    var alpha = Math.min(0.6, 0.12 + (dist / 100));
                     sx += dx * alpha;
                     sy += dy * alpha;
                 }
             }
 
-            var pinching = updatePinch(lm);
+            // Detect Gestures
+            var pointing = isIndexPointing(lm);
+            var palming = isOpenPalm(lm);
 
             // Cursor dot
             ctx.beginPath();
             ctx.arc(sx, sy, 7, 0, Math.PI * 2);
-            ctx.fillStyle = pinching ? 'rgba(255,255,255,0.15)' : (mode === 'erase' ? 'rgba(150,150,150,0.6)' : 'rgba(255,255,255,0.7)');
+            ctx.fillStyle = palming ? 'rgba(150,150,150,0.6)' : (pointing ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.15)');
             ctx.shadowBlur = 0;
             ctx.fill();
 
-            // ── Gesture: 👌 pinch = lift pen, else = draw/erase
-            if (pinching) {
-                if (drawing && cur) { strokes.push(cur); cur = null; }
-                drawing = false;
-                hintEl.textContent = '👌 Pen lifted — moving';
-            } else {
-                // Draw or erase
+            // ── Gesture Logic ──
+            if (palming) {
+                // ✋ Open palm = ERASE
+                if (mode !== 'erase') {
+                    if (drawing && cur) strokes.push(cur);
+                    mode = 'erase';
+                    drawing = false;
+                }
                 if (!drawing) {
                     drawing = true;
-                    cur = { pts: [], erase: (mode === 'erase'), width: brushSize };
+                    cur = { pts: [], erase: true, width: brushSize };
                 }
-                // Keep mode consistent within single stroke
                 cur.pts.push({ x: sx, y: sy });
-                hintEl.textContent = mode === 'erase' ? '◻ Erasing…' : '☝️ Drawing…';
+                hintEl.textContent = '✋ Erasing…';
+
+            } else if (pointing) {
+                // ☝️ One finger = DRAW
+                if (mode !== 'draw') {
+                    if (drawing && cur) strokes.push(cur);
+                    mode = 'draw';
+                    drawing = false;
+                }
+                if (!drawing) {
+                    drawing = true;
+                    cur = { pts: [], erase: false, width: brushSize };
+                }
+                cur.pts.push({ x: sx, y: sy });
+                hintEl.textContent = '☝️ Drawing…';
+
+            } else {
+                // Anything else = PEN LIFTED
+                if (drawing && cur) { strokes.push(cur); cur = null; }
+                drawing = false;
+                hintEl.textContent = '✊ Pen lifted — move freely';
             }
         }
 
