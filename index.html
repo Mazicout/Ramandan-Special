@@ -488,14 +488,19 @@
             }
         }
 
-        // ── Pinch detection ───────────────────────────────────────
-        function isPinch(lm) {
+        // ── Pinch detection (with hysteresis/debounce) ───────
+        var wasPinching = false;
+        function updatePinch(lm) {
             var dx = lm[4].x - lm[8].x;
             var dy = lm[4].y - lm[8].y;
-            return Math.sqrt(dx * dx + dy * dy) < 0.07;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            // Hysteresis: harder to start pinching, easier to KEEP pinching
+            var threshold = wasPinching ? 0.08 : 0.05;
+            wasPinching = dist < threshold;
+            return wasPinching;
         }
 
-        // ── MediaPipe result handler (from user's original code) ──
+        // ── MediaPipe result handler (adaptive smoothing) ─────────
         function run(res) {
             c.width = window.innerWidth;
             c.height = window.innerHeight;
@@ -527,19 +532,35 @@
             var rx = (1 - ind.x) * c.width;
             var ry = ind.y * c.height;
 
-            // 0.45 smoothing (user's original factor)
-            if (sx === null) { sx = rx; sy = ry; }
-            else { sx += (rx - sx) * 0.45; sy += (ry - sy) * 0.45; }
+            // Adaptive smoothing & Dead zone
+            if (sx === null) {
+                sx = rx; sy = ry;
+            } else {
+                var dx = rx - sx;
+                var dy = ry - sy;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+
+                // Dead zone: ignore micro-jitters completely
+                if (dist > 1.5) {
+                    // Adaptive alpha: fast move = 0.5 (responsive), extremely slow move = 0.1 (stable)
+                    // Cap at 0.6 so it never feels completely raw/jittery
+                    var alpha = Math.min(0.6, 0.1 + (dist / 100));
+                    sx += dx * alpha;
+                    sy += dy * alpha;
+                }
+            }
+
+            var pinching = updatePinch(lm);
 
             // Cursor dot
             ctx.beginPath();
             ctx.arc(sx, sy, 7, 0, Math.PI * 2);
-            ctx.fillStyle = isPinch(lm) ? 'rgba(255,255,255,0.15)' : (mode === 'erase' ? 'rgba(150,150,150,0.6)' : 'rgba(255,255,255,0.7)');
+            ctx.fillStyle = pinching ? 'rgba(255,255,255,0.15)' : (mode === 'erase' ? 'rgba(150,150,150,0.6)' : 'rgba(255,255,255,0.7)');
             ctx.shadowBlur = 0;
             ctx.fill();
 
             // ── Gesture: 👌 pinch = lift pen, else = draw/erase
-            if (isPinch(lm)) {
+            if (pinching) {
                 if (drawing && cur) { strokes.push(cur); cur = null; }
                 drawing = false;
                 hintEl.textContent = '👌 Pen lifted — moving';
