@@ -44,6 +44,7 @@
             width: 100vw;
             height: 100vh;
             display: block;
+            /* removed scaleX(-1) so coordinates are 1:1 with screen */
         }
 
         /* ── Floating toolbar ── */
@@ -532,25 +533,17 @@
             drawConnectors(ctx, lm, HAND_CONNECTIONS, { color: 'rgba(255,255,255,0.15)', lineWidth: 1 });
             drawLandmarks(ctx, lm, { color: 'rgba(255,255,255,0.5)', lineWidth: 1, radius: 2 });
 
-            // Index tip — tracking inversion fix (just ind.x, not 1-ind.x)
+            // Index tip — flip X because camera raw frame is mirrored relative to the user
             var ind = lm[8];
-            var rx = ind.x * c.width;
+            var rx = (1 - ind.x) * c.width;
             var ry = ind.y * c.height;
 
-            // Adaptive smoothing & Dead zone
+            // Simple 0.45 smoothing (user's preferred sensitivity)
             if (sx === null) {
                 sx = rx; sy = ry;
             } else {
-                var dx = rx - sx;
-                var dy = ry - sy;
-                var dist = Math.sqrt(dx * dx + dy * dy);
-
-                // Dead zone: ignore micro-jitters completely
-                if (dist > 1.0) {
-                    var alpha = Math.min(0.6, 0.12 + (dist / 100));
-                    sx += dx * alpha;
-                    sy += dy * alpha;
-                }
+                sx += (rx - sx) * 0.45;
+                sy += (ry - sy) * 0.45;
             }
 
             // Detect Gestures
